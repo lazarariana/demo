@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+SAST_DIR="${SAST_DIR:-$(git config phpanalyzer.dir 2>/dev/null)}"
+
+if [ -z "$SAST_DIR" ] || [ ! -d "$SAST_DIR" ]; then
+  echo "[SAST] PhpAnalyzer not found. Set SAST_DIR or run: git config phpanalyzer.dir <path>"
+  exit 0
+fi
+
+found=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  found=1
+
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    continue
+  fi
+
+  report=$(dotnet run --project "$SAST_DIR/PhpAnalyzer.csproj" -c Release -- \
+    diff . "$remote_sha" "$local_sha" 2>&1) || {
+      printf '%s\n' "$report"
+      echo "[SAST] Diff scan failed. Push blocked."
+      exit 1
+    }
+
+  printf '%s\n' "$report"
+
+  printf '%s\n' "$report" | grep -Eq '\[NEW\][[:space:]]+\[ERROR' && {
+    echo "[SAST] ERROR findings introduced. Push blocked."
+    exit 1
+  }
+done
+
+if [ "$found" -eq 0 ]; then
+  exit 0
+fi
+
+echo "[SAST] No new ERROR findings."
+exit 0

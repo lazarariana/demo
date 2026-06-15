@@ -1,0 +1,10 @@
+exclude-paths:
+  - ".git/**"
+  - "vendor/**"
+  - "tests/**"
+  - "sast-licenta/**"
+
+severity-threshold: error
+fail-on-error: true
+output-format: sarif
+strict-config: true

@@ -1,0 +1,24 @@
+#!/bin/sh
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$')
+[ -z "$STAGED" ] && exit 0
+
+SAST_DIR="${SAST_DIR:-$(git config phpanalyzer.dir 2>/dev/null)}"
+
+if [ -z "$SAST_DIR" ] || [ ! -f "$SAST_DIR/PhpAnalyzer.csproj" ]; then
+  echo "[SAST] PhpAnalyzer not found. Set SAST_DIR or run: git config phpanalyzer.dir <path>"
+  exit 0
+fi
+
+dotnet run --project "$SAST_DIR/PhpAnalyzer.csproj" -c Release -- \
+  scan "$(git rev-parse --show-toplevel)" --no-save
+
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo "[SAST] Commit blocked."
+  echo "       Use 'git commit --no-verify' to bypass."
+  exit 1
+fi
+
+echo "[SAST] No vulnerabilities found."
+exit 0
