@@ -1,7 +1,11 @@
 <?php
 $target = $_POST['ip'];
-$target = str_replace(';', '', $target);
-$target = str_replace('&', '', $target);
 
-System("ping -c 4 " . $target);
+if (!filter_var($target, FILTER_VALIDATE_IP)) {
+    die("Invalid IP address");
+}
+
+$cmd = sprintf("ping -c 4 %s", escapeshellarg($target));
+
+system($cmd);
 ?>
