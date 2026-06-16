@@ -1,19 +1,14 @@
 <?php
 $target = $_POST['ip'];
 
-$substitutions = [
-    '&'  => '',
-    ';'  => '',
-    '|'  => '',
-    '-'  => '',
-    '$'  => '',
-    '('  => '',
-    ')'  => '',
-    '`'  => '',
-    '||' => '',
-];
+if (!filter_var($target, FILTER_VALIDATE_IP)) {
+    die("Invalid IP");
+}
 
-$target = str_replace(array_keys($substitutions), array_values($substitutions), $target);
+$cmd = sprintf(
+    "ping -c 4 %s",
+    escapeshellarg($target)
+);
 
-System("ping -c 4 " . $target);
+system($cmd);
 ?>
